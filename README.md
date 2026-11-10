@@ -1,5 +1,11 @@
 # ⚡ Smart Grid Load Balancing Using Particle Swarm Optimization (PSO)
 
+[![CI Test Suite](https://github.com/Suryakotharu8/Smart-Grid-Load-Balancing-PSO/actions/workflows/ci.yml/badge.svg)](https://github.com/Suryakotharu8/Smart-Grid-Load-Balancing-PSO/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B.svg)](https://streamlit.io)
+[![Tests Passing](https://img.shields.io/badge/Tests-28%2F28%20Passed-10B981.svg)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > An Evolutionary Computing academic project that optimises electricity load distribution across multiple distribution lines using a from-scratch PSO implementation, presented through an interactive Streamlit dashboard.
 
 ---
@@ -258,6 +264,44 @@ pytest tests/ -v
 3. **PSO Optimization** — Swarm parameter controls, live generation progress, dispatch matrix, and CSV/PDF report exports
 4. **Before vs After** — Baseline vs PSO comparative metrics table, loading comparison bars, and 5-criteria performance radar
 5. **Analytics Workspace** — Multi-tab telemetry (load heatmaps, utilization & headroom, dispatch sunburst, loss analysis, convergence trajectory, area demand profile)
+
+---
+
+## 🎓 Academic Defense & Viva Voce Q&A
+
+This section prepares students for academic vivas, project presentations, and oral examinations on Evolutionary Computing and Swarm Intelligence.
+
+### Q1: Why use Particle Swarm Optimization (PSO) instead of Genetic Algorithms (GA) or Gradient Descent for this problem?
+**Answer:**
+- **Continuous Decision Space:** The load allocation variables $x_{ij} \in \mathbb{R}^+$ represent continuous power flows (in MW). Standard Genetic Algorithms rely on bit-string representations requiring encoding/decoding overhead, while PSO natively operates in continuous real-valued vector spaces.
+- **Gradient-Free Nature:** Real smart grid fitness surfaces feature non-convex penalty landscapes and discontinuities caused by thresholding limits (e.g., thermal capacity constraints). Gradient descent easily traps in local minima or fails due to non-differentiable penalty transitions.
+- **Fast Convergence:** PSO's collective memory mechanism ($P_{\text{best}}$ and $G_{\text{best}}$) achieves rapid convergence with modest population sizes (15–35 particles), making it ideal for interactive dispatch simulation.
+
+### Q2: How does the algorithm ensure that every area receives 100% of its required electricity?
+**Answer:**
+Rather than relying purely on soft penalties (which can leave minor demand shortfalls), our implementation applies a **deterministic constraint repair operator** after every position update:
+1. **Non-negativity clipping:** $\tilde{x}_{ij} = \max(0, x_{ij})$
+2. **Proportional row normalization:**
+   $$x_{ij}^{\text{repaired}} = \tilde{x}_{ij} \cdot \left(\frac{D_i}{\sum_{k=1}^L \tilde{x}_{ik}}\right)$$
+This guarantees **exact demand conservation** ($\sum_j x_{ij} = D_i$) at every single iteration without floating-point drift.
+
+### Q3: What is the physical significance of the Inertia Weight ($w$), Cognitive ($C_1$), and Social ($C_2$) parameters?
+**Answer:**
+- **Inertia Weight ($w$):** Acts as a momentum damper ($0.4 \le w \le 0.9$). High values promote *global exploration* across the search space, while low values focus on *fine-grained local exploitation*.
+- **Cognitive Coefficient ($C_1$):** Quantifies a particle's self-confidence or private memory, pulling it back toward its historical personal best position ($P_{\text{best}}$).
+- **Social Coefficient ($C_2$):** Quantifies swarm collaboration or social influence, pulling particles toward the current globally optimal consensus ($G_{\text{best}}$).
+
+### Q4: How are line overloads prevented if capacity constraints are handled via penalties?
+**Answer:**
+The overload penalty component uses a quadratic barrier with a massive weight multiplier ($w_2 = 1000$):
+$$F_{\text{overload}} = \sum_{j=1}^L \left(\max(0, \text{Load}_j - \text{Cap}_j)\right)^2$$
+Because the penalty grows quadratically and is heavily weighted, any particle that overloads a line receives an enormous fitness penalty, rendering it immediately inferior to feasible particles and driving the swarm away from infeasible space.
+
+### Q5: How are power distribution losses modeled?
+**Answer:**
+In electrical transmission, Joule losses follow $P_{\text{loss}} = I^2 R$. In our simulation, since current $I$ is approximately proportional to loading ratio $(\text{Load}_j / \text{Cap}_j)$, losses are approximated using a quadratic model:
+$$F_{\text{loss}} = \sum_{j=1}^L k \cdot \left(\frac{\text{Load}_j}{\text{Cap}_j}\right)^2, \quad k = 0.02$$
+This mathematically encourages distributing power evenly across lines rather than pushing any single line near its limit.
 
 ---
 
