@@ -28,3 +28,4 @@ desktop.ini
 # Output results (keep directory structure with .gitkeep)
 results/*
 !results/.gitkeep
+
